@@ -38,7 +38,6 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         Service.ChatGui.CheckMessageHandled += NoticeLoot;
         Service.Framework.Update += FrameworkUpdate;
 
-
         Roller.Init();
 
         Service.CommandManager.AddHandler("/rollforloot", new CommandInfo(OnCommand)
