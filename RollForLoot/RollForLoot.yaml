@@ -1,0 +1,19 @@
+﻿
+name: Roll For Loot
+author: ArchiTed
+description: |-
+  Roll for loot, please!
+punchline: Roll for loot, please!
+repo_url: https://github.com/ArchiDog1998/RollForLoot
+icon_url: https://raw.githubusercontent.com/ArchiDog1998/RollForLoot/main/docs/RotationSolverIcon_128.png
+dalamud_api_level: 8
+tags:
+  - roll
+  - loot
+category_tags:
+  - loot
+image_urls:
+download_count: 1024
+download_link_install: https://github.com/ArchiDog1998/RollForLoot/releases/latest/download/latest.zip
+download_link_update: https://github.com/ArchiDog1998/RollForLoot/releases/latest/download/latest.zip
+download_link_testing: https://github.com/ArchiDog1998/RollForLoot/releases/latest/download/latest.zip
