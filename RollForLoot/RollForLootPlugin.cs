@@ -154,7 +154,7 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
     { 
         RollResult.Needed,
         RollResult.Greeded,
-        RollResult.Passed 
+        RollResult.Passed,
     };
 
     private async void Roll()
