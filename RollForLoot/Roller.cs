@@ -80,15 +80,15 @@ internal static class Roller
             new UIForegroundPayload(575),
             new TextPayload(need.ToString()),
             new UIForegroundPayload(0),
-            new TextPayload(" item" + (need > 1 ? "s" : "") + ", greed "),
+            new TextPayload(" item" + (need == 1 ? "" : "s") + ", greed "),
             new UIForegroundPayload(575),
             new TextPayload(greed.ToString()),
             new UIForegroundPayload(0),
-            new TextPayload(" item" + (greed > 1 ? "s" : "") + ", pass "),
+            new TextPayload(" item" + (greed == 1 ? "" : "s") + ", pass "),
             new UIForegroundPayload(575),
             new TextPayload(pass.ToString()),
             new UIForegroundPayload(0),
-            new TextPayload(" item" + (pass > 1 ? "s" : "") + ".")
+            new TextPayload(" item" + (pass == 1 ? "" : "s") + ".")
         });
 
         if (Service.Config.Config.HasFlag(RollConfig.ResultInChat))
