@@ -107,8 +107,6 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         var needGreedWindow = Service.GameGui.GetAddonByName("NeedGreed", 1);
         if (needGreedWindow == IntPtr.Zero) return;
 
-        //((AddonNeedGreed*)needGreedWindow)->AtkUnitBase.Close(false);
-
         var notification = (AtkUnitBase*)Service.GameGui.GetAddonByName("_Notification", 1);
         if (notification == null) return;
 
