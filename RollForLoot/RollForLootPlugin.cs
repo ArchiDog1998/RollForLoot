@@ -11,8 +11,13 @@ using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using Lumina.Data.Parsing;
 using Lumina.Excel.GeneratedSheets;
+using Newtonsoft.Json.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
+using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace RollForLoot;
 
@@ -102,7 +107,23 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         var needGreedWindow = Service.GameGui.GetAddonByName("NeedGreed", 1);
         if (needGreedWindow == IntPtr.Zero) return;
 
-        ((AddonNeedGreed*)needGreedWindow)->AtkUnitBase.Close(false);
+        //((AddonNeedGreed*)needGreedWindow)->AtkUnitBase.Close(false);
+
+        var notification = (AtkUnitBase*)Service.GameGui.GetAddonByName("_Notification", 1);
+        if (notification == null) return;
+
+        var atkValues = (AtkValue*)Marshal.AllocHGlobal(2 * sizeof(AtkValue));
+        atkValues[0].Type = atkValues[1].Type = ValueType.Int;
+        atkValues[0].Int = 0;
+        atkValues[1].Int = 2;
+        try
+        {
+            notification->FireCallback(2, atkValues);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(new IntPtr(atkValues));
+        }
         _closeWindow = false;
     }
 

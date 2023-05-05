@@ -42,11 +42,29 @@ internal static class Roller
             while (GetNextLootItem(out var index, out var loot))
             {
                 //Make option valid.
-                option = _itemId == loot.ItemId && index == _index ? RollResult.Passed
-                    : ResultMerge(option, GetRestrictResult(loot), GetPlayerRestrict(loot));
+                option = ResultMerge(option, GetRestrictResult(loot), GetPlayerRestrict(loot));
+
+                if(_itemId == loot.ItemId && index == _index)
+                {
+                    switch (option)
+                    {
+                        case RollResult.Needed:
+                            need--;
+                            break;
+                        case RollResult.Greeded:
+                            greed--;
+                            break;
+                        default:
+                            pass--;
+                            break;
+                    }
+                    option = RollResult.Passed;
+                }
 
                 RollItem(option, index);
                 _itemId = loot.ItemId;
+                _index = index;
+
                 switch (option)
                 {
                     case RollResult.Needed:
