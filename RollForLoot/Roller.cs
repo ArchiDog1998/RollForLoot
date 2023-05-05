@@ -30,6 +30,7 @@ internal static class Roller
     public static void RollGreed() => Roll(RollResult.Greeded);
     public static void RollPass() => Roll(RollResult.Passed);
 
+    static uint _itemId = 0, _index = 0;
     public static async void Roll(RollResult option)
     {
         if (_started || !Service.Condition[ConditionFlag.BoundByDuty]) return;
@@ -43,7 +44,26 @@ internal static class Roller
                 //Make option valid.
                 option = ResultMerge(option, GetRestrictResult(loot), GetPlayerRestrict(loot));
 
+                if(_itemId == loot.ItemId && index == _index)
+                {
+                    switch (option)
+                    {
+                        case RollResult.Needed:
+                            need--;
+                            break;
+                        case RollResult.Greeded:
+                            greed--;
+                            break;
+                        default:
+                            pass--;
+                            break;
+                    }
+                    option = RollResult.Passed;
+                }
+
                 RollItem(option, index);
+                _itemId = loot.ItemId;
+                _index = index;
 
                 switch (option)
                 {
@@ -68,7 +88,7 @@ internal static class Roller
         {
             PluginLog.Error(ex, "Something Wrong with rolling!");
         }
-
+        _itemId = _index = 0;
         _started = false;
     }
 
@@ -80,15 +100,15 @@ internal static class Roller
             new UIForegroundPayload(575),
             new TextPayload(need.ToString()),
             new UIForegroundPayload(0),
-            new TextPayload(" item" + (need > 1 ? "s" : "") + ", greed "),
+            new TextPayload(" item" + (need == 1 ? "" : "s") + ", greed "),
             new UIForegroundPayload(575),
             new TextPayload(greed.ToString()),
             new UIForegroundPayload(0),
-            new TextPayload(" item" + (greed > 1 ? "s" : "") + ", pass "),
+            new TextPayload(" item" + (greed == 1 ? "" : "s") + ", pass "),
             new UIForegroundPayload(575),
             new TextPayload(pass.ToString()),
             new UIForegroundPayload(0),
-            new TextPayload(" item" + (pass > 1 ? "s" : "") + ".")
+            new TextPayload(" item" + (pass == 1 ? "" : "s") + ".")
         });
 
         if (Service.Config.Config.HasFlag(RollConfig.ResultInChat))

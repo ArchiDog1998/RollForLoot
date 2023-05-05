@@ -6,7 +6,8 @@ public class Configuration : IPluginConfiguration
 {
     public int Version { get; set; }
 
-    public RollConfig Config = RollConfig.AutoOpenChest | RollConfig.AutoRoll | RollConfig.ResultInChat | RollConfig.ResultInToast;
+    public RollConfig Config = RollConfig.AutoOpenChest | RollConfig.AutoRoll
+        | RollConfig.ResultInChat | RollConfig.ResultInToast | RollConfig.AutoCloseWindow;
 
     public int DefaultStrategy = 0;
 
@@ -32,4 +33,5 @@ public enum RollConfig : byte
     AutoRoll = 1 << 1,
     ResultInChat = 1 << 2,
     ResultInToast = 1 << 3,
+    AutoCloseWindow = 1 << 4,
 }

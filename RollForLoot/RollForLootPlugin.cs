@@ -10,8 +10,14 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using Lumina.Data.Parsing;
 using Lumina.Excel.GeneratedSheets;
+using Newtonsoft.Json.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
+using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace RollForLoot;
 
@@ -48,8 +54,12 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
     }
 
     static DateTime _nextTime = DateTime.Now;
+    static bool _closeWindow = false;
+    static uint _lastChest = 0;
     private unsafe void FrameworkUpdate(Framework framework)
     {
+        CloseWindow();
+
         if (!Service.Config.Config.HasFlag(RollConfig.AutoOpenChest)) return;
         var player = Service.ClientState.LocalPlayer;
         if (player == null) return;
@@ -77,11 +87,42 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
 
         if(treasure == null) return;
         if(DateTime.Now < _nextTime) return;
+        if(treasure.ObjectId == _lastChest && DateTime.Now - _nextTime < TimeSpan.FromSeconds(10)) return;
+
         _nextTime = DateTime.Now.AddSeconds(new Random().NextDouble() + 0.2);
+        _lastChest = treasure.ObjectId;
 
         Service.TargetManager.SetTarget(treasure);
 
         TargetSystem.Instance()->InteractWithObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(void*)treasure.Address);
+
+        if (!Service.Config.Config.HasFlag(RollConfig.AutoCloseWindow)) return;
+        _closeWindow = true;
+    }
+
+    private unsafe static void CloseWindow()
+    {
+        if (!_closeWindow) return;
+
+        var needGreedWindow = Service.GameGui.GetAddonByName("NeedGreed", 1);
+        if (needGreedWindow == IntPtr.Zero) return;
+
+        var notification = (AtkUnitBase*)Service.GameGui.GetAddonByName("_Notification", 1);
+        if (notification == null) return;
+
+        var atkValues = (AtkValue*)Marshal.AllocHGlobal(2 * sizeof(AtkValue));
+        atkValues[0].Type = atkValues[1].Type = ValueType.Int;
+        atkValues[0].Int = 0;
+        atkValues[1].Int = 2;
+        try
+        {
+            notification->FireCallback(2, atkValues);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(new IntPtr(atkValues));
+        }
+        _closeWindow = false;
     }
 
     public void Dispose()
