@@ -48,4 +48,7 @@ public class Service
 
     [PluginService]
     public static TargetManager TargetManager { get; private set; }
+
+    [PluginService] 
+    public static GameGui GameGui { get; private set; }
 }

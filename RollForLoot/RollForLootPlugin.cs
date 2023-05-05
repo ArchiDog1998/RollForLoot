@@ -10,6 +10,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Excel.GeneratedSheets;
 using System.Numerics;
 
@@ -48,8 +49,12 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
     }
 
     static DateTime _nextTime = DateTime.Now;
+    static bool _closeWindow = false;
+    static uint _lastChest = 0;
     private unsafe void FrameworkUpdate(Framework framework)
     {
+        CloseWindow();
+
         if (!Service.Config.Config.HasFlag(RollConfig.AutoOpenChest)) return;
         var player = Service.ClientState.LocalPlayer;
         if (player == null) return;
@@ -78,10 +83,26 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         if(treasure == null) return;
         if(DateTime.Now < _nextTime) return;
         _nextTime = DateTime.Now.AddSeconds(new Random().NextDouble() + 0.2);
+        if(treasure.ObjectId == _lastChest) return;
+        _lastChest = treasure.ObjectId;
 
         Service.TargetManager.SetTarget(treasure);
 
         TargetSystem.Instance()->InteractWithObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(void*)treasure.Address);
+
+        if (!Service.Config.Config.HasFlag(RollConfig.AutoCloseWindow)) return;
+        _closeWindow = true;
+    }
+
+    private unsafe static void CloseWindow()
+    {
+        if (!_closeWindow) return;
+
+        var needGreedWindow = Service.GameGui.GetAddonByName("NeedGreed", 1);
+        if (needGreedWindow == IntPtr.Zero) return;
+
+        ((AddonNeedGreed*)needGreedWindow)->AtkUnitBase.Close(false);
+        _closeWindow = false;
     }
 
     public void Dispose()

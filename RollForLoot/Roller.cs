@@ -30,6 +30,7 @@ internal static class Roller
     public static void RollGreed() => Roll(RollResult.Greeded);
     public static void RollPass() => Roll(RollResult.Passed);
 
+    static uint _itemId = 0, _index = 0;
     public static async void Roll(RollResult option)
     {
         if (_started || !Service.Condition[ConditionFlag.BoundByDuty]) return;
@@ -41,10 +42,11 @@ internal static class Roller
             while (GetNextLootItem(out var index, out var loot))
             {
                 //Make option valid.
-                option = ResultMerge(option, GetRestrictResult(loot), GetPlayerRestrict(loot));
+                option = _itemId == loot.ItemId && index == _index ? RollResult.Passed
+                    : ResultMerge(option, GetRestrictResult(loot), GetPlayerRestrict(loot));
 
                 RollItem(option, index);
-
+                _itemId = loot.ItemId;
                 switch (option)
                 {
                     case RollResult.Needed:
@@ -68,7 +70,7 @@ internal static class Roller
         {
             PluginLog.Error(ex, "Something Wrong with rolling!");
         }
-
+        _itemId = _index = 0;
         _started = false;
     }
 
