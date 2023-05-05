@@ -82,8 +82,9 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
 
         if(treasure == null) return;
         if(DateTime.Now < _nextTime) return;
+        if(treasure.ObjectId == _lastChest && DateTime.Now - _nextTime < TimeSpan.FromSeconds(10)) return;
+
         _nextTime = DateTime.Now.AddSeconds(new Random().NextDouble() + 0.2);
-        if(treasure.ObjectId == _lastChest) return;
         _lastChest = treasure.ObjectId;
 
         Service.TargetManager.SetTarget(treasure);
