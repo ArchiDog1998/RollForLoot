@@ -1,7 +1,5 @@
 ﻿using Dalamud.Interface.Windowing;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
-using Newtonsoft.Json.Linq;
 using System.Numerics;
 
 namespace RollForLoot;
@@ -12,14 +10,16 @@ public class ConfigWindow : Window
         :base("Roll For Loot v" + typeof(ConfigWindow).Assembly.GetName().Version.ToString())
     {
         SizeCondition = ImGuiCond.FirstUseEver;
-        Size = new Vector2(250, 480);
+        Size = new Vector2(250, 540);
         RespectCloseHotkey = true;
     }
 
-    public override void Draw()
+    public override unsafe void Draw()
     {
         foreach (var e in Enum.GetValues<RollConfig>())
         {
+            if (e == RollConfig.DefaultStrategyMask) continue;
+
             var b = Service.Config.Config.HasFlag(e);
             if (ImGui.Checkbox(GetLabel(e), ref b))
             {
@@ -33,13 +33,17 @@ public class ConfigWindow : Window
         if (Service.Config.Config.HasFlag(RollConfig.AutoRoll))
         {
             ImGui.SetNextItemWidth(100);
-            if (ImGui.Combo("Auto Roll Strategy", ref Service.Config.DefaultStrategy, new string[]
+            var index = (byte)(Service.Config.Config & RollConfig.DefaultStrategyMask) >> 5;
+
+            if (ImGui.Combo("Auto Roll Strategy", ref index, new string[]
             {
             "Need",
             "Greed",
             "Pass",
             }, 3))
             {
+                Service.Config.Config &= ~RollConfig.DefaultStrategyMask;
+                Service.Config.Config |= (RollConfig)(byte)(index << 5) & RollConfig.DefaultStrategyMask;
                 Service.Config.Save();
             }
         }
@@ -69,7 +73,7 @@ public class ConfigWindow : Window
         }
     }
 
-    public static string GetLabel(LootStrategy strategy) => strategy switch
+     public static string GetLabel(LootStrategy strategy) => strategy switch
     {
         LootStrategy.IgnoreItemUnlocked => "Ignore Item Unlocked",
         LootStrategy.IgnoreMounts => "Ignore Mounts",

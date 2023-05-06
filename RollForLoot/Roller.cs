@@ -8,9 +8,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Component.Exd;
 using Lumina.Excel.GeneratedSheets;
 using System.Runtime.InteropServices;
-using static Dalamud.Game.Text.SeStringHandling.Payloads.ItemPayload;
-using static FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentInspect;
-using static FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentSatisfactionSupply;
 
 namespace RollForLoot;
 
@@ -46,6 +43,7 @@ internal static class Roller
 
                 if(_itemId == loot.ItemId && index == _index)
                 {
+                    PluginLog.Warning($"Item[{loot.ItemId}] roll {option} failed, please contract to the author.");
                     switch (option)
                     {
                         case RollResult.Needed:
@@ -155,13 +153,13 @@ internal static class Roller
                 return RollResult.Passed;
             }
 
-            if (strategy.HasFlag(LootStrategy.IgnoreMounts)
+            if ((strategy.HasFlag(LootStrategy.IgnoreMounts) || item.IsUnique)
                 && item.ItemAction?.Value.Type == 1322)
             {
                 return RollResult.Passed;
             }
 
-            if (strategy.HasFlag(LootStrategy.IgnoreMinions)
+            if ((strategy.HasFlag(LootStrategy.IgnoreMinions) || item.IsUnique)
                 && item.ItemAction?.Value.Type == 853)
             {
                 return RollResult.Passed;
@@ -210,6 +208,14 @@ internal static class Roller
             {
                 return RollResult.Passed;
             }
+        }
+
+        //PLD set.
+        if (strategy.HasFlag(LootStrategy.IgnoreOtherJobItems)
+            && item.ItemAction?.Value.Type == 29153 
+            && !(Service.ClientState.LocalPlayer?.ClassJob?.Id is 1 or 19))
+        {
+            return RollResult.Passed;
         }
 
         return RollResult.Needed;
