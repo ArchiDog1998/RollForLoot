@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.2](https://github.com/ArchiDog1998/RollForLoot/compare/v1.0.1...v1.0.2) (2023-05-06)
+
+
+### Bug Fixes
+
+* add a warning about roll failed. ([ee1025a](https://github.com/ArchiDog1998/RollForLoot/commit/ee1025a65fa132f35b73b6101a4c62dc50778834))
+* changed the auto close window. ([cc4e1f8](https://github.com/ArchiDog1998/RollForLoot/commit/cc4e1f8e956703f1b1c8da548723d2b8f226adda))
+* changed the config format. ([74d3979](https://github.com/ArchiDog1998/RollForLoot/commit/74d39799f5c97140c286a0430247f1e4a6b90b7d))
+* fixed with roll minions or mounts and pld set. ([d570488](https://github.com/ArchiDog1998/RollForLoot/commit/d5704882bd908248dff9dc496929cf6eaaa7d42e))
+
 ## [1.0.1](https://github.com/ArchiDog1998/RollForLoot/compare/v1.0.0...v1.0.1) (2023-05-05)
 
 
