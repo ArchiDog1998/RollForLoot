@@ -8,9 +8,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Component.Exd;
 using Lumina.Excel.GeneratedSheets;
 using System.Runtime.InteropServices;
-using static Dalamud.Game.Text.SeStringHandling.Payloads.ItemPayload;
-using static FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentInspect;
-using static FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentSatisfactionSupply;
 
 namespace RollForLoot;
 

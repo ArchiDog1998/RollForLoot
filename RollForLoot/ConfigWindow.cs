@@ -1,10 +1,6 @@
 ﻿using Dalamud.Interface.Windowing;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
-using Newtonsoft.Json.Linq;
 using System.Numerics;
-using static Dalamud.Game.Text.SeStringHandling.Payloads.ItemPayload;
 
 namespace RollForLoot;
 
