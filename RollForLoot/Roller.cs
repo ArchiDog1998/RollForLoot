@@ -46,6 +46,7 @@ internal static class Roller
 
                 if(_itemId == loot.ItemId && index == _index)
                 {
+                    PluginLog.Warning($"Item[{loot.ItemId}] roll {option} failed, please contract to the author.");
                     switch (option)
                     {
                         case RollResult.Needed:

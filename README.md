@@ -1,5 +1,6 @@
 # Roll For Loot
 
+![Github Latest Releases](https://img.shields.io/github/downloads/ArchiDog1998/RollForLoot/latest/total.svg?style=for-the-badge)
 ![Github All Releases](https://img.shields.io/github/downloads/ArchiDog1998/RollForLoot/total.svg?style=for-the-badge)
 ![Github Lines](https://img.shields.io/tokei/lines/github/ArchiDog1998/RollForLoot?style=for-the-badge)
 ![Github License](https://img.shields.io/github/license/ArchiDog1998/RollForLoot.svg?label=License&style=for-the-badge)

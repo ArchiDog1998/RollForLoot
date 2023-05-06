@@ -12,7 +12,7 @@ public class ConfigWindow : Window
         :base("Roll For Loot v" + typeof(ConfigWindow).Assembly.GetName().Version.ToString())
     {
         SizeCondition = ImGuiCond.FirstUseEver;
-        Size = new Vector2(250, 480);
+        Size = new Vector2(250, 540);
         RespectCloseHotkey = true;
     }
 
