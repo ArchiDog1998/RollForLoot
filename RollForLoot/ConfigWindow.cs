@@ -33,13 +33,17 @@ public class ConfigWindow : Window
         if (Service.Config.Config.HasFlag(RollConfig.AutoRoll))
         {
             ImGui.SetNextItemWidth(100);
-            if (ImGui.Combo("Auto Roll Strategy", ref Service.Config.DefaultStrategy, new string[]
+            var index = (byte)(Service.Config.Config & RollConfig.DefaultStrategyMask) >> 5;
+
+            if (ImGui.Combo("Auto Roll Strategy", ref index, new string[]
             {
             "Need",
             "Greed",
             "Pass",
             }, 3))
             {
+                Service.Config.Config &= ~RollConfig.DefaultStrategyMask;
+                Service.Config.Config |= (RollConfig)(byte)(index << 5) & RollConfig.DefaultStrategyMask;
                 Service.Config.Save();
             }
         }

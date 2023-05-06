@@ -202,6 +202,8 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         await Task.Delay(new Random().Next((int)(Service.Config.AutoRollDelayMin * 1000),
             (int)(Service.Config.AutoRollDelayMax * 1000)));
 
-        Roller.Roll(_rollArray[Service.Config.DefaultStrategy]);
+        var index = (byte)(Service.Config.Config & RollConfig.DefaultStrategyMask) >> 5;
+
+        Roller.Roll(_rollArray[index]);
     }
 }

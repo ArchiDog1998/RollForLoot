@@ -9,8 +9,6 @@ public class Configuration : IPluginConfiguration
     public RollConfig Config = RollConfig.AutoOpenChest | RollConfig.AutoRoll
         | RollConfig.ResultInChat | RollConfig.ResultInToast | RollConfig.AutoCloseWindow;
 
-    public int DefaultStrategy = 0;
-
     public LootStrategy LootStrategy = 0;
 
     public int ItemLevel = 0;
@@ -34,4 +32,6 @@ public enum RollConfig : byte
     ResultInChat = 1 << 2,
     ResultInToast = 1 << 3,
     AutoCloseWindow = 1 << 4,
+
+    DefaultStrategyMask = 1 << 5 | 1 << 6,
 }
