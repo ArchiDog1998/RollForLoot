@@ -7,6 +7,7 @@ using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Interface.Windowing;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -79,9 +80,6 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
                 if (item.ChestObjectId == o.ObjectId) return false;
             }
 
-            //if (o.OwnerId is 0 or GameObject.InvalidGameObjectId) return true;
-            //if (o.OwnerId == player.ObjectId) return true;
-
             return true;
         });
 
@@ -92,9 +90,16 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         _nextTime = DateTime.Now.AddSeconds(new Random().NextDouble() + 0.2);
         _lastChest = treasure.ObjectId;
 
-        Service.TargetManager.SetTarget(treasure);
+        try
+        {
+            Service.TargetManager.SetTarget(treasure);
 
-        TargetSystem.Instance()->InteractWithObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(void*)treasure.Address);
+            TargetSystem.Instance()->InteractWithObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(void*)treasure.Address);
+        }
+        catch(Exception ex)
+        {
+            PluginLog.Error(ex, "Failed to open the chest!");
+        }
 
         if (!Service.Config.Config.HasFlag(RollConfig.AutoCloseWindow)) return;
         _closeWindow = true;
@@ -107,6 +112,8 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         var needGreedWindow = Service.GameGui.GetAddonByName("NeedGreed", 1);
         if (needGreedWindow == IntPtr.Zero) return;
 
+        _closeWindow = false;
+
         var notification = (AtkUnitBase*)Service.GameGui.GetAddonByName("_Notification", 1);
         if (notification == null) return;
 
@@ -118,11 +125,14 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         {
             notification->FireCallback(2, atkValues);
         }
+        catch(Exception ex)
+        {
+            PluginLog.Warning(ex, "Failed to close the window!");
+        }
         finally
         {
             Marshal.FreeHGlobal(new IntPtr(atkValues));
         }
-        _closeWindow = false;
     }
 
     public void Dispose()

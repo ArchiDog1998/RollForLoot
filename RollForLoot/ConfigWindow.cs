@@ -1,8 +1,10 @@
 ﻿using Dalamud.Interface.Windowing;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json.Linq;
 using System.Numerics;
+using static Dalamud.Game.Text.SeStringHandling.Payloads.ItemPayload;
 
 namespace RollForLoot;
 
@@ -16,10 +18,12 @@ public class ConfigWindow : Window
         RespectCloseHotkey = true;
     }
 
-    public override void Draw()
+    public override unsafe void Draw()
     {
         foreach (var e in Enum.GetValues<RollConfig>())
         {
+            if (e == RollConfig.DefaultStrategyMask) continue;
+
             var b = Service.Config.Config.HasFlag(e);
             if (ImGui.Checkbox(GetLabel(e), ref b))
             {
@@ -73,7 +77,7 @@ public class ConfigWindow : Window
         }
     }
 
-    public static string GetLabel(LootStrategy strategy) => strategy switch
+     public static string GetLabel(LootStrategy strategy) => strategy switch
     {
         LootStrategy.IgnoreItemUnlocked => "Ignore Item Unlocked",
         LootStrategy.IgnoreMounts => "Ignore Mounts",
