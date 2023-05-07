@@ -1,7 +1,4 @@
-﻿using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
+﻿using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -13,110 +10,62 @@ namespace RollForLoot;
 
 internal static class Roller
 {
-    unsafe delegate void RollItemRaw(Loot* lootIntPtr, RollResult option, uint lootItemIndex);
+    unsafe delegate bool RollItemRaw(Loot* lootIntPtr, RollResult option, uint lootItemIndex);
     static RollItemRaw _rollItemRaw;
-
-    static bool _started;
 
     public static void Init()
     {
         _rollItemRaw = Marshal.GetDelegateForFunctionPointer<RollItemRaw>(Service.SigScanner.ScanText("41 83 F8 ?? 0F 83 ?? ?? ?? ?? 48 89 5C 24 08"));
     }
 
-    public static void RollNeed() => Roll(RollResult.Needed);
-    public static void RollGreed() => Roll(RollResult.Greeded);
-    public static void RollPass() => Roll(RollResult.Passed);
-
     static uint _itemId = 0, _index = 0;
-    public static async void Roll(RollResult option)
+    public static void Clear()
     {
-        if (_started || !Service.Condition[ConditionFlag.BoundByDuty]) return;
-        _started = true;
-
-        try
-        {
-            int need = 0, greed = 0, pass = 0;
-            while (GetNextLootItem(out var index, out var loot))
-            {
-                //Make option valid.
-                option = ResultMerge(option, GetRestrictResult(loot), GetPlayerRestrict(loot));
-
-                if(_itemId == loot.ItemId && index == _index)
-                {
-                    PluginLog.Warning($"Item[{loot.ItemId}] roll {option} failed, please contract to the author.");
-                    switch (option)
-                    {
-                        case RollResult.Needed:
-                            need--;
-                            break;
-                        case RollResult.Greeded:
-                            greed--;
-                            break;
-                        default:
-                            pass--;
-                            break;
-                    }
-                    option = RollResult.Passed;
-                }
-
-                RollItem(option, index);
-                _itemId = loot.ItemId;
-                _index = index;
-
-                switch (option)
-                {
-                    case RollResult.Needed:
-                        need++;
-                        break;
-                    case RollResult.Greeded:
-                        greed++;
-                        break;
-                    default: 
-                        pass++;
-                        break;
-                }
-
-                await Task.Delay(new Random().Next((int)(Service.Config.RollDelayMin * 1000),
-                    (int)(Service.Config.RollDelayMax * 1000)));
-            }
-
-            ShowResult(need, greed, pass);
-        }
-        catch (Exception ex)
-        {
-            PluginLog.Error(ex, "Something Wrong with rolling!");
-        }
         _itemId = _index = 0;
-        _started = false;
     }
 
-    private static void ShowResult(int need, int greed, int pass)
+    public static bool RollOneItem(RollResult option, ref int need, ref int greed, ref int pass)
     {
-        SeString seString = new(new List<Payload>()
-        {
-            new TextPayload("Need "),
-            new UIForegroundPayload(575),
-            new TextPayload(need.ToString()),
-            new UIForegroundPayload(0),
-            new TextPayload(" item" + (need == 1 ? "" : "s") + ", greed "),
-            new UIForegroundPayload(575),
-            new TextPayload(greed.ToString()),
-            new UIForegroundPayload(0),
-            new TextPayload(" item" + (greed == 1 ? "" : "s") + ", pass "),
-            new UIForegroundPayload(575),
-            new TextPayload(pass.ToString()),
-            new UIForegroundPayload(0),
-            new TextPayload(" item" + (pass == 1 ? "" : "s") + ".")
-        });
+        if (!GetNextLootItem(out var index, out var loot)) return false;
 
-        if (Service.Config.Config.HasFlag(RollConfig.ResultInChat))
+        //Make option valid.
+        option = ResultMerge(option, GetRestrictResult(loot), GetPlayerRestrict(loot));
+
+        if (_itemId == loot.ItemId && index == _index)
         {
-            Service.ChatGui.Print(seString);
+            PluginLog.Warning($"Item [{loot.ItemId}] roll {option} failed, please contract to the author. Or lower you delay.");
+            switch (option)
+            {
+                case RollResult.Needed:
+                    need--;
+                    break;
+                case RollResult.Greeded:
+                    greed--;
+                    break;
+                default:
+                    pass--;
+                    break;
+            }
+            option = RollResult.Passed;
         }
-        if (Service.Config.Config.HasFlag(RollConfig.ResultInToast))
+
+        RollItem(option, index);
+        _itemId = loot.ItemId;
+        _index = index;
+
+        switch (option)
         {
-            Service.ToastGui.ShowQuest(seString);
+            case RollResult.Needed:
+                need++;
+                break;
+            case RollResult.Greeded:
+                greed++;
+                break;
+            default:
+                pass++;
+                break;
         }
+        return true;
     }
 
     private static RollResult GetRestrictResult(LootItem loot)
@@ -238,7 +187,7 @@ internal static class Roller
             loot = span[(int)i];
             if (loot.ChestObjectId is 0 or GameObject.InvalidGameObjectId) continue;
             if ((RollResult)loot.RollResult != RollResult.UnAwarded) continue;
-            if (loot.RollState is RollState.Rolled or RollState.Unavailable) continue;
+            if (loot.RollState is RollState.Rolled or RollState.Unavailable or RollState.Unknown) continue;
             if (loot.ItemId == 0) continue;
             if (loot.LootMode is LootMode.LootMasterGreedOnly or LootMode.Unavailable) continue;
 
@@ -253,7 +202,7 @@ internal static class Roller
     {
         try
         {
-            _rollItemRaw?.Invoke(Loot.Instance(), option, index);
+            Service.ChatGui.Print( _rollItemRaw?.Invoke(Loot.Instance(), option, index).ToString());
         }
         catch (Exception ex)
         {

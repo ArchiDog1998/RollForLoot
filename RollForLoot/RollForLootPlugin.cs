@@ -1,9 +1,11 @@
 ﻿using Dalamud;
 using Dalamud.Game;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.Command;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
@@ -13,6 +15,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using static FFXIVClientStructs.FFXIV.Client.UI.Misc.ConfigModule;
 using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace RollForLoot;
@@ -23,7 +26,6 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
 
     private readonly WindowSystem _windowSystem;
     static ConfigWindow _configWindow;
-
 
     public RollForLootPlugin(DalamudPluginInterface pluginInterface)
     {
@@ -49,57 +51,31 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         });
     }
 
-    static DateTime _nextTime = DateTime.Now;
-    static bool _closeWindow = false;
-    static uint _lastChest = 0;
-    private unsafe void FrameworkUpdate(Framework framework)
+    public void Dispose()
     {
-        CloseWindow();
+        Service.Interface.UiBuilder.OpenConfigUi -= OnOpenConfigUi;
+        Service.Interface.UiBuilder.Draw -= _windowSystem.Draw;
+        Service.ChatGui.CheckMessageHandled -= NoticeLoot;
+        Service.Framework.Update -= FrameworkUpdate;
 
-        if (!Service.Config.Config.HasFlag(RollConfig.AutoOpenChest)) return;
-        var player = Service.ClientState.LocalPlayer;
-        if (player == null) return;
-
-        var treasure = Service.ObjectTable.FirstOrDefault(o =>
-        {
-            if(o == null) return false;
-            var dis = Vector3.Distance(player.Position, o.Position) - player.HitboxRadius - o.HitboxRadius;
-            if(dis > 0.5f) return false;
-
-            var address = (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(void*)o.Address;
-            if ((ObjectKind)address->ObjectKind != ObjectKind.Treasure) return false;
-
-            //Opened!
-            foreach (var item in Loot.Instance()->ItemArraySpan)
-            {
-                if (item.ChestObjectId == o.ObjectId) return false;
-            }
-
-            return true;
-        });
-
-        if(treasure == null) return;
-        if(DateTime.Now < _nextTime) return;
-        if(treasure.ObjectId == _lastChest && DateTime.Now - _nextTime < TimeSpan.FromSeconds(10)) return;
-
-        _nextTime = DateTime.Now.AddSeconds(new Random().NextDouble() + 0.2);
-        _lastChest = treasure.ObjectId;
-
-        try
-        {
-            Service.TargetManager.SetTarget(treasure);
-
-            TargetSystem.Instance()->InteractWithObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(void*)treasure.Address);
-        }
-        catch(Exception ex)
-        {
-            PluginLog.Error(ex, "Failed to open the chest!");
-        }
-
-        if (!Service.Config.Config.HasFlag(RollConfig.AutoCloseWindow)) return;
-        _closeWindow = true;
+        Service.CommandManager.RemoveHandler("/rollforloot");
     }
 
+    private void OnOpenConfigUi()
+    {
+        _configWindow.IsOpen = true;
+    }
+
+    private unsafe void FrameworkUpdate(Framework framework)
+    {
+        if (!Service.Condition[ConditionFlag.BoundByDuty]) return;
+
+        CloseWindow();
+        OpenChest();
+        RollLoot();
+    }
+
+    static bool _closeWindow = false;
     private unsafe static void CloseWindow()
     {
         if (!_closeWindow) return;
@@ -120,7 +96,7 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         {
             notification->FireCallback(2, atkValues);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             PluginLog.Warning(ex, "Failed to close the window!");
         }
@@ -130,34 +106,124 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         }
     }
 
-    public void Dispose()
+    static DateTime _nextOpenTime = DateTime.Now;
+    static uint _lastChest = 0;
+    private unsafe static void OpenChest()
     {
-        Service.Interface.UiBuilder.OpenConfigUi -= OnOpenConfigUi;
-        Service.Interface.UiBuilder.Draw -= _windowSystem.Draw;
-        Service.ChatGui.CheckMessageHandled -= NoticeLoot;
-        Service.Framework.Update -= FrameworkUpdate;
+        if (!Service.Config.Config.HasFlag(RollConfig.AutoOpenChest)) return;
+        var player = Service.ClientState.LocalPlayer;
+        if (player == null) return;
 
-        Service.CommandManager.RemoveHandler("/rollforloot");
+        var treasure = Service.ObjectTable.FirstOrDefault(o =>
+        {
+            if (o == null) return false;
+            var dis = Vector3.Distance(player.Position, o.Position) - player.HitboxRadius - o.HitboxRadius;
+            if (dis > 0.5f) return false;
+
+            var address = (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(void*)o.Address;
+            if ((ObjectKind)address->ObjectKind != ObjectKind.Treasure) return false;
+
+            //Opened!
+            foreach (var item in Loot.Instance()->ItemArraySpan)
+            {
+                if (item.ChestObjectId == o.ObjectId) return false;
+            }
+
+            return true;
+        });
+
+        if (treasure == null) return;
+        if (DateTime.Now < _nextOpenTime) return;
+        if (treasure.ObjectId == _lastChest && DateTime.Now - _nextOpenTime < TimeSpan.FromSeconds(10)) return;
+
+        _nextOpenTime = DateTime.Now.AddSeconds(new Random().NextDouble() + 0.2);
+        _lastChest = treasure.ObjectId;
+
+        try
+        {
+            Service.TargetManager.SetTarget(treasure);
+
+            TargetSystem.Instance()->InteractWithObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(void*)treasure.Address);
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Error(ex, "Failed to open the chest!");
+        }
+
+        if (!Service.Config.Config.HasFlag(RollConfig.AutoCloseWindow)) return;
+        _closeWindow = true;
     }
 
-    private void OnOpenConfigUi()
+    static DateTime _nextRollTime = DateTime.Now;
+    static RollResult _rollOption = RollResult.UnAwarded;
+    static int _need = 0, _greed = 0, _pass = 0;
+    private static void RollLoot()
     {
-        _configWindow.IsOpen = true;
+        if (_rollOption == RollResult.UnAwarded) return;
+        if (DateTime.Now < _nextRollTime) return;
+
+        _nextRollTime = DateTime.Now.AddMilliseconds(Math.Max(150, new Random()
+            .Next((int)(Service.Config.RollDelayMin * 1000),
+            (int)(Service.Config.RollDelayMax * 1000))));
+
+        try
+        {
+            if (!Roller.RollOneItem(_rollOption, ref _need, ref _greed, ref _pass))//Finish the loot
+            {
+                ShowResult(_need, _greed, _pass);
+                _need = _greed = _pass = 0;
+                _rollOption = RollResult.UnAwarded;
+                Roller.Clear();
+            }
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Error(ex, "Something Wrong with rolling!");
+        }
+    }
+
+    private static void ShowResult(int need, int greed, int pass)
+    {
+        SeString seString = new(new List<Payload>()
+        {
+            new TextPayload("Need "),
+            new UIForegroundPayload(575),
+            new TextPayload(need.ToString()),
+            new UIForegroundPayload(0),
+            new TextPayload(" item" + (need == 1 ? "" : "s") + ", greed "),
+            new UIForegroundPayload(575),
+            new TextPayload(greed.ToString()),
+            new UIForegroundPayload(0),
+            new TextPayload(" item" + (greed == 1 ? "" : "s") + ", pass "),
+            new UIForegroundPayload(575),
+            new TextPayload(pass.ToString()),
+            new UIForegroundPayload(0),
+            new TextPayload(" item" + (pass == 1 ? "" : "s") + ".")
+        });
+
+        if (Service.Config.Config.HasFlag(RollConfig.ResultInChat))
+        {
+            Service.ChatGui.Print(seString);
+        }
+        if (Service.Config.Config.HasFlag(RollConfig.ResultInToast))
+        {
+            Service.ToastGui.ShowQuest(seString);
+        }
     }
 
     private void OnCommand(string command, string arguments)
     {
         if(arguments.Contains("need", StringComparison.OrdinalIgnoreCase))
         {
-            Roller.RollNeed();
+            _rollOption = RollResult.Needed;
         }
         else if (arguments.Contains("greed", StringComparison.OrdinalIgnoreCase))
         {
-            Roller.RollGreed();
+            _rollOption = RollResult.Greeded;
         }
         else if (arguments.Contains("pass", StringComparison.OrdinalIgnoreCase))
         {
-            Roller.RollPass();
+            _rollOption = RollResult.Passed;
         }
         else if (arguments.Contains("autoRoll", StringComparison.OrdinalIgnoreCase))
         {
@@ -177,6 +243,13 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         }
     }
 
+    static readonly RollResult[] _rollArray = new RollResult[]
+    {
+        RollResult.Needed,
+        RollResult.Greeded,
+        RollResult.Passed,
+    };
+
     private void NoticeLoot(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
         if (!Service.Config.Config.HasFlag(RollConfig.AutoRoll) || type != (XivChatType)2105) return;
@@ -191,24 +264,12 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         })
         {
             Service.Interface.UiBuilder.AddNotification("Loot Time!", "Roll For Loot", NotificationType.Info);
-            Roll();
+
+            _nextRollTime = DateTime.Now.AddMilliseconds(new Random()
+                .Next((int)(Service.Config.AutoRollDelayMin * 1000),
+                (int)(Service.Config.AutoRollDelayMax * 1000)));
+
+            _rollOption = _rollArray[(byte)(Service.Config.Config & RollConfig.DefaultStrategyMask) >> 5];
         }
-    }
-
-    static RollResult[] _rollArray = new RollResult[] 
-    { 
-        RollResult.Needed,
-        RollResult.Greeded,
-        RollResult.Passed,
-    };
-
-    private async void Roll()
-    {
-        await Task.Delay(new Random().Next((int)(Service.Config.AutoRollDelayMin * 1000),
-            (int)(Service.Config.AutoRollDelayMax * 1000)));
-
-        var index = (byte)(Service.Config.Config & RollConfig.DefaultStrategyMask) >> 5;
-
-        Roller.Roll(_rollArray[index]);
     }
 }
