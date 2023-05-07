@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/ArchiDog1998/RollForLoot/compare/v1.0.2...v1.0.3) (2023-05-07)
+
+
+### Bug Fixes
+
+* add minimum delay for rolling. ([05afd03](https://github.com/ArchiDog1998/RollForLoot/commit/05afd0335c3120e128e852c056c020f43b4ed795))
+
 ## [1.0.2](https://github.com/ArchiDog1998/RollForLoot/compare/v1.0.1...v1.0.2) (2023-05-06)
 
 
