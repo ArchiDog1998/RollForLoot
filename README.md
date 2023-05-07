@@ -1,4 +1,4 @@
-# Roll For Loot
+# ![](icon.png)Roll For Loot
 
 ![Github Latest Releases](https://img.shields.io/github/downloads/ArchiDog1998/RollForLoot/latest/total.svg?style=for-the-badge)
 ![Github All Releases](https://img.shields.io/github/downloads/ArchiDog1998/RollForLoot/total.svg?style=for-the-badge)
