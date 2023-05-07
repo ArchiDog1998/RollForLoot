@@ -50,7 +50,7 @@ public class ConfigWindow : Window
 
         ImGui.SetNextItemWidth(100);
         if(ImGui.DragFloatRange2("Delay for each roll", ref Service.Config.RollDelayMin,
-            ref Service.Config.RollDelayMax, 0.05f, 0, 5)) Service.Config.Save();
+            ref Service.Config.RollDelayMax, 0.05f, 0.15f, 5)) Service.Config.Save();
 
         ImGui.SetNextItemWidth(100);
         if (ImGui.DragFloatRange2("Delay for auto roll", ref Service.Config.AutoRollDelayMin,
