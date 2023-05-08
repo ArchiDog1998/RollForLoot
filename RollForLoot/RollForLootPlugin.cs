@@ -15,7 +15,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using static FFXIVClientStructs.FFXIV.Client.UI.Misc.ConfigModule;
 using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace RollForLoot;
@@ -75,15 +74,13 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         RollLoot();
     }
 
-    static bool _closeWindow = false;
+    static DateTime _closeWindowTime = DateTime.Now;
     private unsafe static void CloseWindow()
     {
-        if (!_closeWindow) return;
+        if (_closeWindowTime < DateTime.Now) return;
 
         var needGreedWindow = Service.GameGui.GetAddonByName("NeedGreed", 1);
         if (needGreedWindow == IntPtr.Zero) return;
-
-        _closeWindow = false;
 
         var notification = (AtkUnitBase*)Service.GameGui.GetAddonByName("_Notification", 1);
         if (notification == null) return;
@@ -151,7 +148,7 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         }
 
         if (!Service.Config.Config.HasFlag(RollConfig.AutoCloseWindow)) return;
-        _closeWindow = true;
+        _closeWindowTime = DateTime.Now.AddSeconds(0.1);
     }
 
     static DateTime _nextRollTime = DateTime.Now;
@@ -270,6 +267,11 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
                 (int)(Service.Config.AutoRollDelayMax * 1000)));
 
             _rollOption = _rollArray[(byte)(Service.Config.Config & RollConfig.DefaultStrategyMask) >> 5];
+
+            if (Service.Config.Config.HasFlag(RollConfig.AutoCloseWindow))
+            {
+                _closeWindowTime = DateTime.Now.AddSeconds(0.1);
+            }
         }
     }
 }

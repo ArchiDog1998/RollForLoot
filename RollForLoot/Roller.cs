@@ -202,7 +202,7 @@ internal static class Roller
     {
         try
         {
-            Service.ChatGui.Print( _rollItemRaw?.Invoke(Loot.Instance(), option, index).ToString());
+           _rollItemRaw?.Invoke(Loot.Instance(), option, index).ToString();
         }
         catch (Exception ex)
         {
