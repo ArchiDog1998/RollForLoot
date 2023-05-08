@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/ArchiDog1998/RollForLoot/compare/v1.0.3...v1.0.4) (2023-05-08)
+
+
+### Bug Fixes
+
+* fixed the bug with auto close the window. ([da4c721](https://github.com/ArchiDog1998/RollForLoot/commit/da4c721c04fb8cd882dd5d718bcb56acba24c085))
+
 ## [1.0.3](https://github.com/ArchiDog1998/RollForLoot/compare/v1.0.2...v1.0.3) (2023-05-07)
 
 
