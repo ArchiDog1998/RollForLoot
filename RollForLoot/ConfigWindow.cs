@@ -89,11 +89,9 @@ public class ConfigWindow : Window
 
     public static string GetLabel(RollConfig strategy) => strategy switch
     {
-        RollConfig.AutoOpenChest => "Auto Open the Chest",
         RollConfig.AutoRoll => "Auto Roll for Loot",
         RollConfig.ResultInChat => "Show Result In Chat",
         RollConfig.ResultInToast => "Show Result In Toast",
-        RollConfig.AutoCloseWindow => "Auto Close the Treasure Window.",
         _ => string.Empty,
     };
 }
