@@ -1,7 +1,6 @@
 ﻿using Dalamud;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.Command;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
@@ -10,12 +9,6 @@ using Dalamud.Interface.Internal.Notifications;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using Dalamud.Plugin;
-using FFXIVClientStructs.FFXIV.Client.Game.Control;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Component.GUI;
-using System.Numerics;
-using System.Runtime.InteropServices;
-using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace RollForLoot;
 
@@ -68,87 +61,7 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
     private unsafe void FrameworkUpdate(Framework framework)
     {
         if (!Service.Condition[ConditionFlag.BoundByDuty]) return;
-
-        CloseWindow();
-        OpenChest();
         RollLoot();
-    }
-
-    static DateTime _closeWindowTime = DateTime.Now;
-    private unsafe static void CloseWindow()
-    {
-        if (_closeWindowTime < DateTime.Now) return;
-
-        var needGreedWindow = Service.GameGui.GetAddonByName("NeedGreed", 1);
-        if (needGreedWindow == IntPtr.Zero) return;
-
-        var notification = (AtkUnitBase*)Service.GameGui.GetAddonByName("_Notification", 1);
-        if (notification == null) return;
-
-        var atkValues = (AtkValue*)Marshal.AllocHGlobal(2 * sizeof(AtkValue));
-        atkValues[0].Type = atkValues[1].Type = ValueType.Int;
-        atkValues[0].Int = 0;
-        atkValues[1].Int = 2;
-        try
-        {
-            notification->FireCallback(2, atkValues);
-        }
-        catch (Exception ex)
-        {
-            PluginLog.Warning(ex, "Failed to close the window!");
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(new IntPtr(atkValues));
-        }
-    }
-
-    static DateTime _nextOpenTime = DateTime.Now;
-    static uint _lastChest = 0;
-    private unsafe static void OpenChest()
-    {
-        if (!Service.Config.Config.HasFlag(RollConfig.AutoOpenChest)) return;
-        var player = Service.ClientState.LocalPlayer;
-        if (player == null) return;
-
-        var treasure = Service.ObjectTable.FirstOrDefault(o =>
-        {
-            if (o == null) return false;
-            var dis = Vector3.Distance(player.Position, o.Position) - player.HitboxRadius - o.HitboxRadius;
-            if (dis > 0.5f) return false;
-
-            var address = (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(void*)o.Address;
-            if ((ObjectKind)address->ObjectKind != ObjectKind.Treasure) return false;
-
-            //Opened!
-            foreach (var item in Loot.Instance()->ItemArraySpan)
-            {
-                if (item.ChestObjectId == o.ObjectId) return false;
-            }
-
-            return true;
-        });
-
-        if (treasure == null) return;
-        if (DateTime.Now < _nextOpenTime) return;
-        if (treasure.ObjectId == _lastChest && DateTime.Now - _nextOpenTime < TimeSpan.FromSeconds(10)) return;
-
-        _nextOpenTime = DateTime.Now.AddSeconds(new Random().NextDouble() + 0.2);
-        _lastChest = treasure.ObjectId;
-
-        try
-        {
-            Service.TargetManager.SetTarget(treasure);
-
-            TargetSystem.Instance()->InteractWithObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)(void*)treasure.Address);
-        }
-        catch (Exception ex)
-        {
-            PluginLog.Error(ex, "Failed to open the chest!");
-        }
-
-        if (!Service.Config.Config.HasFlag(RollConfig.AutoCloseWindow)) return;
-        _closeWindowTime = DateTime.Now.AddSeconds(0.1);
     }
 
     static DateTime _nextRollTime = DateTime.Now;
@@ -162,6 +75,9 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         _nextRollTime = DateTime.Now.AddMilliseconds(Math.Max(150, new Random()
             .Next((int)(Service.Config.RollDelayMin * 1000),
             (int)(Service.Config.RollDelayMax * 1000))));
+
+        //No rolling in cutscene.
+        if (Service.Condition[ConditionFlag.OccupiedInCutSceneEvent]) return;
 
         try
         {
@@ -228,12 +144,6 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
             Service.ChatGui.Print($"Set Auto Roll to {Service.Config.Config.HasFlag(RollConfig.AutoRoll)}");
             Service.Config.Save();
         }
-        else if (arguments.Contains("autoOpen", StringComparison.OrdinalIgnoreCase))
-        {
-            Service.Config.Config ^= RollConfig.AutoOpenChest;
-            Service.ChatGui.Print($"Set Auto Open to {Service.Config.Config.HasFlag(RollConfig.AutoOpenChest)}");
-            Service.Config.Save();
-        }
         else
         {
             OnOpenConfigUi();
@@ -266,12 +176,7 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
                 .Next((int)(Service.Config.AutoRollDelayMin * 1000),
                 (int)(Service.Config.AutoRollDelayMax * 1000)));
 
-            _rollOption = _rollArray[(byte)(Service.Config.Config & RollConfig.DefaultStrategyMask) >> 5];
-
-            if (Service.Config.Config.HasFlag(RollConfig.AutoCloseWindow))
-            {
-                _closeWindowTime = DateTime.Now.AddSeconds(0.1);
-            }
+            _rollOption = _rollArray[(byte)(Service.Config.Config & RollConfig.DefaultStrategyMask) >> 3];
         }
     }
 }
