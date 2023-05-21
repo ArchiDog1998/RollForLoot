@@ -176,7 +176,7 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
                 .Next((int)(Service.Config.AutoRollDelayMin * 1000),
                 (int)(Service.Config.AutoRollDelayMax * 1000)));
 
-            _rollOption = _rollArray[(byte)(Service.Config.Config & RollConfig.DefaultStrategyMask) >> 3];
+            _rollOption = _rollArray[((byte)(Service.Config.Config & RollConfig.DefaultStrategyMask) >> 3) % 3];
         }
     }
 }
