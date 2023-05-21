@@ -2,7 +2,6 @@
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.Game.Gui.Toast;
@@ -41,13 +40,4 @@ public class Service
 
     [PluginService]
     public static Condition Condition { get; private set; }
-
-    [PluginService]
-    public static ObjectTable ObjectTable { get; private set; }
-
-    [PluginService]
-    public static TargetManager TargetManager { get; private set; }
-
-    [PluginService] 
-    public static GameGui GameGui { get; private set; }
 }
