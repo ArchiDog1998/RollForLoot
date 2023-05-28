@@ -6,18 +6,12 @@
 ![Github License](https://img.shields.io/github/license/ArchiDog1998/RollForLoot.svg?label=License&style=for-the-badge)
 ![Github Commits](https://img.shields.io/github/commits-since/ArchiDog1998/RollForLoot/latest/main?style=for-the-badge)
 
-Special thanks to [53m1k0l0n](https://github.com/53m1k0l0n) for `LazyLoot`.
+This plugin is `Obsolete`! Please use [LazyLoot ](https://github.com/PunishXIV/LazyLoot) from [Puni.sh](https://github.com/PunishXIV) instead. And the Auto Open Chest feature is merged into [PandorasBox](https://github.com/PunishXIV/PandorasBox) - Targets - `Automatically Open Chests`.
 
-This is a plugin to auto roll and auto open the chest for you.
+Repo Url:
 
 ```
-https://raw.githubusercontent.com/ArchiDog1998/Dalamud_Plugins/main/pluginmaster.json
+https://love.puni.sh/ment.json
 ```
 
-| Command               | Description              |
-| --------------------- | ------------------------ |
-| /rollforloot need     | need all loot.           |
-| /rollforloot greed    | greed all loot.          |
-| /rollforloot pass     | pass all loot.           |
-| /rollforloot autoRoll | toggle auto roll option. |
-
+[![image](https://discordapp.com/api/guilds/1001823907193552978/embed.png?style=banner2)](https://discord.gg/Zzrcc8kmvy)
