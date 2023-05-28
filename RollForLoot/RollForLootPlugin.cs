@@ -31,10 +31,7 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
 
         Service.Interface.UiBuilder.OpenConfigUi += OnOpenConfigUi;
         Service.Interface.UiBuilder.Draw += _windowSystem.Draw;
-        Service.ChatGui.CheckMessageHandled += NoticeLoot;
         Service.Framework.Update += FrameworkUpdate;
-
-        Roller.Init();
 
         Service.CommandManager.AddHandler("/rollforloot", new CommandInfo(OnCommand)
         {
@@ -47,7 +44,6 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
     {
         Service.Interface.UiBuilder.OpenConfigUi -= OnOpenConfigUi;
         Service.Interface.UiBuilder.Draw -= _windowSystem.Draw;
-        Service.ChatGui.CheckMessageHandled -= NoticeLoot;
         Service.Framework.Update -= FrameworkUpdate;
 
         Service.CommandManager.RemoveHandler("/rollforloot");
@@ -64,12 +60,32 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         RollLoot();
     }
 
+    static readonly RollResult[] _rollArray = new RollResult[]
+    {
+        RollResult.Needed,
+        RollResult.Greeded,
+        RollResult.Passed,
+    };
+
     static DateTime _nextRollTime = DateTime.Now;
     static RollResult _rollOption = RollResult.UnAwarded;
     static int _need = 0, _greed = 0, _pass = 0;
     private static void RollLoot()
     {
-        if (_rollOption == RollResult.UnAwarded) return;
+        if (_rollOption == RollResult.UnAwarded)
+        {
+            if (Service.Config.Config.HasFlag(RollConfig.AutoRoll) && Roller.GetNextLootItem(out _, out _))
+            {
+                Service.Interface.UiBuilder.AddNotification("Loot Time!", "Roll For Loot", NotificationType.Info);
+
+                _nextRollTime = DateTime.Now.AddMilliseconds(new Random()
+                    .Next((int)(Service.Config.AutoRollDelayMin * 1000),
+                    (int)(Service.Config.AutoRollDelayMax * 1000)));
+
+                _rollOption = _rollArray[((byte)(Service.Config.Config & RollConfig.DefaultStrategyMask) >> 3) % 3];
+            }
+            return;
+        }
         if (DateTime.Now < _nextRollTime) return;
 
         _nextRollTime = DateTime.Now.AddMilliseconds(Math.Max(150, new Random()
@@ -147,36 +163,6 @@ public sealed class RollForLootPlugin : IDalamudPlugin, IDisposable
         else
         {
             OnOpenConfigUi();
-        }
-    }
-
-    static readonly RollResult[] _rollArray = new RollResult[]
-    {
-        RollResult.Needed,
-        RollResult.Greeded,
-        RollResult.Passed,
-    };
-
-    private void NoticeLoot(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
-    {
-        if (!Service.Config.Config.HasFlag(RollConfig.AutoRoll) || type != (XivChatType)2105) return;
-
-        string textValue = message.TextValue;
-        if (textValue == Service.ClientState.ClientLanguage switch
-        {
-            ClientLanguage.German => "Bitte um das Beutegut würfeln.",
-            ClientLanguage.French => "Veuillez lancer les dés pour le butin.",
-            ClientLanguage.Japanese => "ロットを行ってください。",
-            _ => "Cast your lot.",
-        })
-        {
-            Service.Interface.UiBuilder.AddNotification("Loot Time!", "Roll For Loot", NotificationType.Info);
-
-            _nextRollTime = DateTime.Now.AddMilliseconds(new Random()
-                .Next((int)(Service.Config.AutoRollDelayMin * 1000),
-                (int)(Service.Config.AutoRollDelayMax * 1000)));
-
-            _rollOption = _rollArray[((byte)(Service.Config.Config & RollConfig.DefaultStrategyMask) >> 3) % 3];
         }
     }
 }
