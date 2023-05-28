@@ -179,7 +179,7 @@ internal static class Roller
        };
 
 
-    private static unsafe bool GetNextLootItem(out uint i, out LootItem loot)
+    public static unsafe bool GetNextLootItem(out uint i, out LootItem loot)
     {
         var span = Loot.Instance()->ItemArraySpan;
         for (i = 0; i < span.Length; i++)
